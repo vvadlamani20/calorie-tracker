@@ -1,6 +1,6 @@
 // Bauhaus Calorie Tracker — service worker
 // Bump CACHE on every deploy so clients fetch new assets.
-const CACHE = 'bauhaus-v2';
+const CACHE = 'bauhaus-v3';
 
 const APP_SHELL = [
   './',
@@ -42,14 +42,37 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// Network-first for HTML/JSX so app updates take effect on the next open
+// (cache-first kept getting users stuck on stale builds). Cache-first for
+// everything else (icons, fonts, vendor JS) keeps offline + fast paint.
+function isAppCode(url) {
+  return url.pathname.endsWith('/') ||
+         url.pathname.endsWith('.html') ||
+         url.pathname.endsWith('.jsx') ||
+         url.pathname.endsWith('manifest.webmanifest');
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  const networkFirst = url.origin === self.location.origin && isAppCode(url);
+
+  if (networkFirst) {
+    e.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
   e.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
       return fetch(req).then((res) => {
-        // Stash successful same-origin + CDN responses for offline use
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
         return res;
