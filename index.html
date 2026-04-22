@@ -38,6 +38,9 @@
   .bauhaus-scroll { scrollbar-width: none; }
   /* Disable text selection on UI chrome — feels app-like on iOS */
   button, .no-select { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+  @keyframes bauhausFade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes bauhausSlideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes bauhausPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 </style>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
@@ -50,6 +53,7 @@
 <script type="text/babel" src="bauhaus-tokens.jsx"></script>
 <script type="text/babel" src="bauhaus-data.jsx"></script>
 <script type="text/babel" src="bauhaus-search.jsx"></script>
+<script type="text/babel" src="bauhaus-voice.jsx"></script>
 <script type="text/babel" src="bauhaus-foodedit.jsx"></script>
 <script type="text/babel" src="bauhaus-today.jsx"></script>
 <script type="text/babel" src="bauhaus-history.jsx"></script>
@@ -135,7 +139,7 @@ function App() {
   const [library, setLibrary] = React.useState(() => loadJSON('bh_lib', []));
   const [entries, setEntries] = React.useState(() => loadJSON('bh_entries', []));
   const [defaultDay, setDefaultDay] = React.useState(() => loadJSON('bh_default', []));
-  const [apiKeys, setApiKeys] = React.useState(() => loadJSON('bh_keys', { usda: '', nxId: '', nxKey: '' }));
+  const [apiKeys, setApiKeys] = React.useState(() => loadJSON('bh_keys', { usda: '', nxId: '', nxKey: '', anthropic: '' }));
   const [addOpen, setAddOpen] = React.useState(false);
   const [editorOpen, setEditorOpen] = React.useState(false);
   const [editorInitial, setEditorInitial] = React.useState(null);
@@ -157,6 +161,17 @@ function App() {
 
   const addFoodToLog = (food) => {
     setEntries([...entries, { foodId: food.id, qty: 1 }]);
+  };
+
+  // Batch append from voice log: foods may include not-yet-saved library items.
+  const addEntriesFromVoice = (resolved) => {
+    const newLibFoods = [];
+    const newEntries = resolved.map(({ food, qty }) => {
+      if (!library.some(f => f.id === food.id)) newLibFoods.push(food);
+      return { foodId: food.id, qty };
+    });
+    if (newLibFoods.length) setLibrary([...library, ...newLibFoods]);
+    setEntries([...entries, ...newEntries]);
   };
 
   // Library CRUD
@@ -215,9 +230,16 @@ function App() {
       <AddFoodOverlay
         open={addOpen}
         library={library}
+        apiKeys={apiKeys}
         onClose={() => setAddOpen(false)}
         onPick={addFoodToLog}
+        onPickMany={addEntriesFromVoice}
         onNewFood={() => { setAddOpen(false); openNewFood(); }}
+        onCreateMissing={(spokenName) => {
+          setAddOpen(false);
+          setEditorInitial({ name: spokenName.toUpperCase() });
+          setEditorOpen(true);
+        }}
         tokens={tokens}
       />
       <FoodEditor

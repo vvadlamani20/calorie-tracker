@@ -324,19 +324,26 @@ function SettingsSheet({ open, onClose, apiKeys, setApiKeys, tokens }) {
   const [usda, setUsda] = React.useState(apiKeys.usda || '');
   const [nxId, setNxId] = React.useState(apiKeys.nxId || '');
   const [nxKey, setNxKey] = React.useState(apiKeys.nxKey || '');
+  const [anthropic, setAnthropic] = React.useState(apiKeys.anthropic || '');
 
   React.useEffect(() => {
     if (open) {
       setUsda(apiKeys.usda || '');
       setNxId(apiKeys.nxId || '');
       setNxKey(apiKeys.nxKey || '');
+      setAnthropic(apiKeys.anthropic || '');
     }
   }, [open]);
 
   if (!open) return null;
 
   const save = () => {
-    setApiKeys({ usda: usda.trim(), nxId: nxId.trim(), nxKey: nxKey.trim() });
+    setApiKeys({
+      usda: usda.trim(),
+      nxId: nxId.trim(),
+      nxKey: nxKey.trim(),
+      anthropic: anthropic.trim(),
+    });
     onClose();
   };
 
@@ -418,6 +425,15 @@ function SettingsSheet({ open, onClose, apiKeys, setApiKeys, tokens }) {
               fontFamily: MONO_FONT, fontSize: 9, color: tokens.muted,
               letterSpacing: 1, marginTop: 4,
             }}>SIGN UP: developer.nutritionix.com/signup</div>
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={labelStyle}>ANTHROPIC API KEY · VOICE LOG</label>
+            <input value={anthropic} onChange={(e) => setAnthropic(e.target.value)} placeholder="sk-ant-…" style={inputStyle} />
+            <div style={{
+              fontFamily: MONO_FONT, fontSize: 9, color: tokens.muted,
+              letterSpacing: 1, marginTop: 4,
+            }}>SIGN UP: console.anthropic.com/settings/keys</div>
           </div>
 
           <button
