@@ -25,7 +25,7 @@ function SegmentedControl({ tabs, active, onChange, tokens }) {
   );
 }
 
-function MyFoodsList({ tokens }) {
+function MyFoodsList({ library, tokens, onEditFood }) {
   return (
     <div>
       <div style={{
@@ -35,16 +35,35 @@ function MyFoodsList({ tokens }) {
         display: 'flex', justifyContent: 'space-between',
       }}>
         <span>— LIBRARY</span>
-        <span style={{ color: tokens.muted }}>{FOOD_LIB.length} ITEMS</span>
+        <span style={{ color: tokens.muted }}>{library.length} ITEMS</span>
       </div>
       <div style={{ borderTop: `2px solid ${tokens.ink}` }} />
-      {FOOD_LIB.map((f, i) => (
-        <div key={f.id} style={{
-          display: 'flex', alignItems: 'center', gap: 14,
-          padding: '14px 20px',
-          borderBottom: `2px solid ${tokens.ink}`,
-          background: tokens.bg,
+      {library.length === 0 && (
+        <div style={{
+          margin: '20px',
+          border: `3px solid ${tokens.ink}`, padding: '28px 20px',
+          textAlign: 'center',
         }}>
+          <div style={{
+            fontFamily: DISPLAY_FONT, fontSize: 18,
+            color: tokens.ink, letterSpacing: 0.4, marginBottom: 8,
+          }}>NO FOODS YET</div>
+          <div style={{
+            fontFamily: MONO_FONT, fontSize: 11,
+            color: tokens.muted, letterSpacing: 1.5, lineHeight: 1.6,
+          }}>TAP NEW FOOD BELOW TO SEARCH<br/>USDA · OPEN FOOD FACTS</div>
+        </div>
+      )}
+      {library.map((f) => (
+        <div
+          key={f.id}
+          onClick={() => onEditFood(f)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 14,
+            padding: '14px 20px',
+            borderBottom: `2px solid ${tokens.ink}`,
+            background: tokens.bg, cursor: 'pointer',
+          }}>
           <div style={{ fontSize: 26, width: 30 }}>{f.emoji}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
@@ -74,8 +93,8 @@ function MyFoodsList({ tokens }) {
   );
 }
 
-function DefaultDayList({ defaultDay, setDefaultDay, tokens, showBanner }) {
-  const totals = sumDay(defaultDay);
+function DefaultDayList({ library, defaultDay, setDefaultDay, tokens, showBanner }) {
+  const totals = sumDay(library, defaultDay);
   const updateQty = (i, qty) => {
     if (qty <= 0) { removeAt(i); return; }
     const next = defaultDay.slice();
@@ -126,8 +145,15 @@ function DefaultDayList({ defaultDay, setDefaultDay, tokens, showBanner }) {
         letterSpacing: 2.5, color: tokens.ink,
       }}>— EVERY MORNING</div>
       <div style={{ borderTop: `2px solid ${tokens.ink}` }} />
+      {defaultDay.length === 0 && (
+        <div style={{
+          padding: '28px 20px', textAlign: 'center',
+          fontFamily: MONO_FONT, fontSize: 11,
+          color: tokens.muted, letterSpacing: 1.5, lineHeight: 1.6,
+        }}>NO TEMPLATE YET</div>
+      )}
       {defaultDay.map((e, i) => {
-        const f = getFood(e.foodId);
+        const f = getFood(library, e.foodId);
         if (!f) return null;
         return (
           <SwipeRow
@@ -164,7 +190,23 @@ function DefaultDayList({ defaultDay, setDefaultDay, tokens, showBanner }) {
   );
 }
 
-function MyFoodsScreen({ defaultDay, setDefaultDay, tokens, dark, setDark }) {
+function SettingsButton({ tokens, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Settings"
+      style={{
+        width: 44, height: 44,
+        background: tokens.bg, border: `3px solid ${tokens.ink}`,
+        cursor: 'pointer', padding: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: MONO_FONT, fontSize: 18, fontWeight: 700, color: tokens.ink,
+      }}
+    >⚙</button>
+  );
+}
+
+function MyFoodsScreen({ library, defaultDay, setDefaultDay, tokens, dark, setDark, onNewFood, onEditFood, onOpenSettings }) {
   const [tab, setTab] = React.useState('MY FOODS');
   const [banner, setBanner] = React.useState(false);
   const showBanner = () => {
@@ -187,7 +229,10 @@ function MyFoodsScreen({ defaultDay, setDefaultDay, tokens, dark, setDark }) {
             color: tokens.ink, letterSpacing: 0.5, marginTop: 2,
           }}>FOODS</div>
         </div>
-        <DarkToggle dark={dark} setDark={setDark} tokens={tokens} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <SettingsButton tokens={tokens} onClick={onOpenSettings} />
+          <DarkToggle dark={dark} setDark={setDark} tokens={tokens} />
+        </div>
       </div>
       <div style={{ height: 3, background: tokens.ink, marginBottom: 16 }} />
 
@@ -197,26 +242,30 @@ function MyFoodsScreen({ defaultDay, setDefaultDay, tokens, dark, setDark }) {
       />
 
       {tab === 'MY FOODS'
-        ? <MyFoodsList tokens={tokens} />
-        : <DefaultDayList defaultDay={defaultDay} setDefaultDay={setDefaultDay} tokens={tokens} showBanner={showBanner} />}
+        ? <MyFoodsList library={library} tokens={tokens} onEditFood={onEditFood} />
+        : <DefaultDayList library={library} defaultDay={defaultDay} setDefaultDay={setDefaultDay} tokens={tokens} showBanner={showBanner} />}
 
       {/* CTA */}
-      <div style={{ padding: 20 }}>
-        <button style={{
-          width: '100%', height: 56,
-          background: tokens.red, color: '#fff',
-          border: `3px solid ${tokens.ink}`,
-          fontFamily: MONO_FONT, fontSize: 14, fontWeight: 700,
-          letterSpacing: 2.5, cursor: 'pointer', padding: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-        }}>
-          <div style={{ position: 'relative', width: 16, height: 16 }}>
-            <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 3, background: '#fff', transform: 'translateY(-50%)' }} />
-            <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 3, background: '#fff', transform: 'translateX(-50%)' }} />
-          </div>
-          {tab === 'MY FOODS' ? 'NEW FOOD' : 'ADD TO DEFAULT'}
-        </button>
-      </div>
+      {tab === 'MY FOODS' && (
+        <div style={{ padding: 20 }}>
+          <button
+            onClick={onNewFood}
+            style={{
+              width: '100%', height: 56,
+              background: tokens.red, color: '#fff',
+              border: `3px solid ${tokens.ink}`,
+              fontFamily: MONO_FONT, fontSize: 14, fontWeight: 700,
+              letterSpacing: 2.5, cursor: 'pointer', padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+            }}>
+            <div style={{ position: 'relative', width: 16, height: 16 }}>
+              <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 3, background: '#fff', transform: 'translateY(-50%)' }} />
+              <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 3, background: '#fff', transform: 'translateX(-50%)' }} />
+            </div>
+            NEW FOOD
+          </button>
+        </div>
+      )}
 
       {/* Banner */}
       <div style={{

@@ -26,8 +26,8 @@ function MacroBar({ macros, tokens }) {
   );
 }
 
-function HistoryCard({ day, tokens, open, onToggle }) {
-  const totals = sumDay(day.entries);
+function HistoryCard({ day, library, tokens, open, onToggle }) {
+  const totals = sumDay(library, day.entries);
   return (
     <div style={{
       border: `3px solid ${tokens.ink}`,
@@ -82,7 +82,7 @@ function HistoryCard({ day, tokens, open, onToggle }) {
       {open && (
         <div style={{ borderTop: `2px solid ${tokens.ink}` }}>
           {day.entries.map((e, i) => {
-            const f = getFood(e.foodId);
+            const f = getFood(library, e.foodId);
             if (!f) return null;
             return (
               <div key={i} style={{
@@ -113,8 +113,12 @@ function HistoryCard({ day, tokens, open, onToggle }) {
   );
 }
 
-function HistoryScreen({ tokens, dark, setDark }) {
+function HistoryScreen({ library, tokens, dark, setDark }) {
   const [openIdx, setOpenIdx] = React.useState(0);
+  const days = HISTORY; // empty until day-rollover lands
+  const avg = days.length
+    ? Math.round(days.reduce((a, d) => a + sumDay(library, d.entries).kcal, 0) / days.length)
+    : 0;
   return (
     <div style={{ background: tokens.bg, minHeight: '100%', paddingBottom: 24 }}>
       <div style={{
@@ -135,30 +139,48 @@ function HistoryScreen({ tokens, dark, setDark }) {
       </div>
       <div style={{ height: 3, background: tokens.ink, marginBottom: 20 }} />
 
-      {/* Weekly average strip */}
-      <div style={{
-        margin: '0 20px 24px', background: tokens.ink, color: tokens.bg,
-        padding: '12px 16px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      }}>
+      {days.length > 0 && (
         <div style={{
-          fontFamily: MONO_FONT, fontSize: 10, fontWeight: 700,
-          letterSpacing: 2.5,
-        }}>7-DAY AVG</div>
+          margin: '0 20px 24px', background: tokens.ink, color: tokens.bg,
+          padding: '12px 16px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <div style={{
+            fontFamily: MONO_FONT, fontSize: 10, fontWeight: 700,
+            letterSpacing: 2.5,
+          }}>7-DAY AVG</div>
+          <div style={{
+            fontFamily: NUM_FONT, fontSize: 32, letterSpacing: 0.5,
+            fontFeatureSettings: '"tnum" 1',
+          }}>{avg.toLocaleString()}</div>
+          <div style={{
+            fontFamily: MONO_FONT, fontSize: 10, fontWeight: 700,
+            letterSpacing: 2, opacity: 0.7,
+          }}>KCAL/DAY</div>
+        </div>
+      )}
+
+      {days.length === 0 && (
         <div style={{
-          fontFamily: NUM_FONT, fontSize: 32, letterSpacing: 0.5,
-          fontFeatureSettings: '"tnum" 1',
-        }}>{Math.round(HISTORY.reduce((a, d) => a + sumDay(d.entries).kcal, 0) / HISTORY.length).toLocaleString()}</div>
-        <div style={{
-          fontFamily: MONO_FONT, fontSize: 10, fontWeight: 700,
-          letterSpacing: 2, opacity: 0.7,
-        }}>KCAL/DAY</div>
-      </div>
+          margin: '0 20px',
+          border: `3px solid ${tokens.ink}`, padding: '32px 20px',
+          textAlign: 'center',
+        }}>
+          <div style={{
+            fontFamily: DISPLAY_FONT, fontSize: 20,
+            color: tokens.ink, letterSpacing: 0.4, marginBottom: 8,
+          }}>NO HISTORY YET</div>
+          <div style={{
+            fontFamily: MONO_FONT, fontSize: 11,
+            color: tokens.muted, letterSpacing: 1.5, lineHeight: 1.6,
+          }}>YOUR DAILY LOGS WILL APPEAR HERE<br/>ONCE DAY-ROLLOVER LANDS</div>
+        </div>
+      )}
 
       <div style={{ padding: '0 20px' }}>
-        {HISTORY.map((d, i) => (
+        {days.map((d, i) => (
           <HistoryCard
-            key={d.date} day={d} tokens={tokens}
+            key={d.date} day={d} library={library} tokens={tokens}
             open={openIdx === i}
             onToggle={() => setOpenIdx(openIdx === i ? -1 : i)}
           />

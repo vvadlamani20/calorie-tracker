@@ -49,6 +49,8 @@
 
 <script type="text/babel" src="bauhaus-tokens.jsx"></script>
 <script type="text/babel" src="bauhaus-data.jsx"></script>
+<script type="text/babel" src="bauhaus-search.jsx"></script>
+<script type="text/babel" src="bauhaus-foodedit.jsx"></script>
 <script type="text/babel" src="bauhaus-today.jsx"></script>
 <script type="text/babel" src="bauhaus-history.jsx"></script>
 <script type="text/babel" src="bauhaus-myfoods.jsx"></script>
@@ -119,31 +121,33 @@ function TabBar({ active, onChange, tokens }) {
   );
 }
 
+function loadJSON(key, fallback) {
+  try {
+    const s = localStorage.getItem(key);
+    if (s) return JSON.parse(s);
+  } catch {}
+  return fallback;
+}
+
 function App() {
   const [tab, setTab] = React.useState(() => localStorage.getItem('bh_tab') || 'TODAY');
   const [dark, setDark] = React.useState(() => localStorage.getItem('bh_dark') === '1');
-  const [entries, setEntries] = React.useState(() => {
-    try {
-      const saved = localStorage.getItem('bh_entries');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_DAY.map(e => ({ ...e }));
-  });
-  const [defaultDay, setDefaultDay] = React.useState(() => {
-    try {
-      const saved = localStorage.getItem('bh_default');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return DEFAULT_DAY.map(e => ({ ...e }));
-  });
+  const [library, setLibrary] = React.useState(() => loadJSON('bh_lib', []));
+  const [entries, setEntries] = React.useState(() => loadJSON('bh_entries', []));
+  const [defaultDay, setDefaultDay] = React.useState(() => loadJSON('bh_default', []));
+  const [apiKeys, setApiKeys] = React.useState(() => loadJSON('bh_keys', { usda: '', nxId: '', nxKey: '' }));
   const [addOpen, setAddOpen] = React.useState(false);
+  const [editorOpen, setEditorOpen] = React.useState(false);
+  const [editorInitial, setEditorInitial] = React.useState(null);
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
 
   React.useEffect(() => { localStorage.setItem('bh_tab', tab); }, [tab]);
   React.useEffect(() => { localStorage.setItem('bh_dark', dark ? '1' : '0'); }, [dark]);
+  React.useEffect(() => { localStorage.setItem('bh_lib', JSON.stringify(library)); }, [library]);
   React.useEffect(() => { localStorage.setItem('bh_entries', JSON.stringify(entries)); }, [entries]);
   React.useEffect(() => { localStorage.setItem('bh_default', JSON.stringify(defaultDay)); }, [defaultDay]);
+  React.useEffect(() => { localStorage.setItem('bh_keys', JSON.stringify(apiKeys)); }, [apiKeys]);
 
-  // Keep iOS status-bar overlay color in sync with theme (for standalone mode)
   React.useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', dark ? '#141210' : '#E63219');
@@ -151,23 +155,44 @@ function App() {
 
   const tokens = useBauhaus(dark);
 
-  const addFood = (food) => {
+  const addFoodToLog = (food) => {
     setEntries([...entries, { foodId: food.id, qty: 1 }]);
+  };
+
+  // Library CRUD
+  const openNewFood = () => { setEditorInitial(null); setEditorOpen(true); };
+  const openEditFood = (food) => { setEditorInitial(food); setEditorOpen(true); };
+  const saveFood = (food) => {
+    const exists = library.some(f => f.id === food.id);
+    setLibrary(exists
+      ? library.map(f => f.id === food.id ? food : f)
+      : [...library, food]);
+    setEditorOpen(false);
+  };
+  const deleteFood = (id) => {
+    setLibrary(library.filter(f => f.id !== id));
+    setEntries(entries.filter(e => e.foodId !== id));
+    setDefaultDay(defaultDay.filter(e => e.foodId !== id));
+    setEditorOpen(false);
   };
 
   let screen;
   if (tab === 'TODAY') {
     screen = <TodayScreen
-      entries={entries} setEntries={setEntries}
+      library={library} entries={entries} setEntries={setEntries}
       tokens={tokens} dark={dark} setDark={setDark}
       onAdd={() => setAddOpen(true)}
     />;
   } else if (tab === 'HISTORY') {
-    screen = <HistoryScreen tokens={tokens} dark={dark} setDark={setDark} />;
+    screen = <HistoryScreen library={library} tokens={tokens} dark={dark} setDark={setDark} />;
   } else {
     screen = <MyFoodsScreen
+      library={library}
       defaultDay={defaultDay} setDefaultDay={setDefaultDay}
       tokens={tokens} dark={dark} setDark={setDark}
+      onNewFood={openNewFood}
+      onEditFood={openEditFood}
+      onOpenSettings={() => setSettingsOpen(true)}
     />;
   }
 
@@ -189,8 +214,26 @@ function App() {
       </div>
       <AddFoodOverlay
         open={addOpen}
+        library={library}
         onClose={() => setAddOpen(false)}
-        onPick={addFood}
+        onPick={addFoodToLog}
+        onNewFood={() => { setAddOpen(false); openNewFood(); }}
+        tokens={tokens}
+      />
+      <FoodEditor
+        open={editorOpen}
+        initial={editorInitial}
+        onClose={() => setEditorOpen(false)}
+        onSave={saveFood}
+        onDelete={deleteFood}
+        tokens={tokens}
+        apiKeys={apiKeys}
+      />
+      <SettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        apiKeys={apiKeys}
+        setApiKeys={setApiKeys}
         tokens={tokens}
       />
       <TabBar active={tab} onChange={setTab} tokens={tokens} />

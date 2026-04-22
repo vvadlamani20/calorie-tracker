@@ -1,6 +1,6 @@
-// Add-food overlay: Bauhaus modal with grid of food library items
+// Add-food overlay: pick from library, or jump to New Food editor
 
-function AddFoodOverlay({ open, onClose, onPick, tokens }) {
+function AddFoodOverlay({ open, library, onClose, onPick, onNewFood, tokens }) {
   if (!open) return null;
   return (
     <div style={{
@@ -27,7 +27,7 @@ function AddFoodOverlay({ open, onClose, onPick, tokens }) {
             <div style={{
               fontFamily: MONO_FONT, fontSize: 10, fontWeight: 700,
               letterSpacing: 2.5, color: tokens.ink,
-            }}>OFF-TEMPLATE</div>
+            }}>FROM LIBRARY</div>
             <div style={{
               fontFamily: DISPLAY_FONT, fontSize: 24,
               color: tokens.ink, letterSpacing: 0.4, marginTop: 2,
@@ -42,35 +42,74 @@ function AddFoodOverlay({ open, onClose, onPick, tokens }) {
               fontFamily: DISPLAY_FONT, fontSize: 18,
             }}>×</button>
         </div>
-        {FOOD_LIB.map((f, i) => (
-          <div
-            key={f.id}
-            onClick={() => { onPick(f); onClose(); }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              padding: '12px 20px',
-              borderBottom: `2px solid ${tokens.ink}`,
-              cursor: 'pointer', background: tokens.bg,
-            }}
-          >
-            <div style={{ fontSize: 24, width: 28 }}>{f.emoji}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{
-                fontFamily: DISPLAY_FONT, fontSize: 13,
-                color: tokens.ink, letterSpacing: 0.3,
-              }}>{f.name}</div>
-              <div style={{
-                fontFamily: MONO_FONT, fontSize: 10, fontWeight: 700,
-                letterSpacing: 1.5, color: tokens.muted, marginTop: 3,
-              }}>{f.serving}</div>
-            </div>
+
+        {library.length === 0 ? (
+          <div style={{
+            padding: '32px 20px', textAlign: 'center',
+          }}>
             <div style={{
-              fontFamily: NUM_FONT, fontSize: 22,
-              color: tokens.ink, letterSpacing: 0.5,
-              fontFeatureSettings: '"tnum" 1',
-            }}>{f.kcal}</div>
+              fontFamily: DISPLAY_FONT, fontSize: 18,
+              color: tokens.ink, letterSpacing: 0.4, marginBottom: 8,
+            }}>EMPTY LIBRARY</div>
+            <div style={{
+              fontFamily: MONO_FONT, fontSize: 11,
+              color: tokens.muted, letterSpacing: 1.5, lineHeight: 1.6,
+              marginBottom: 20,
+            }}>SEARCH USDA OR OPEN FOOD FACTS<br/>TO BUILD YOUR LIBRARY</div>
+            <button
+              onClick={onNewFood}
+              style={{
+                width: '100%', height: 52,
+                background: tokens.red, color: '#fff',
+                border: `3px solid ${tokens.ink}`,
+                fontFamily: MONO_FONT, fontSize: 13, fontWeight: 700,
+                letterSpacing: 2.5, cursor: 'pointer', padding: 0,
+              }}>+ NEW FOOD</button>
           </div>
-        ))}
+        ) : (
+          <>
+            {library.map((f) => (
+              <div
+                key={f.id}
+                onClick={() => { onPick(f); onClose(); }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  padding: '12px 20px',
+                  borderBottom: `2px solid ${tokens.ink}`,
+                  cursor: 'pointer', background: tokens.bg,
+                }}
+              >
+                <div style={{ fontSize: 24, width: 28 }}>{f.emoji}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontFamily: DISPLAY_FONT, fontSize: 13,
+                    color: tokens.ink, letterSpacing: 0.3,
+                  }}>{f.name}</div>
+                  <div style={{
+                    fontFamily: MONO_FONT, fontSize: 10, fontWeight: 700,
+                    letterSpacing: 1.5, color: tokens.muted, marginTop: 3,
+                  }}>{f.serving}</div>
+                </div>
+                <div style={{
+                  fontFamily: NUM_FONT, fontSize: 22,
+                  color: tokens.ink, letterSpacing: 0.5,
+                  fontFeatureSettings: '"tnum" 1',
+                }}>{f.kcal}</div>
+              </div>
+            ))}
+            <div style={{ padding: 16 }}>
+              <button
+                onClick={onNewFood}
+                style={{
+                  width: '100%', height: 48,
+                  background: tokens.bg, color: tokens.ink,
+                  border: `3px solid ${tokens.ink}`,
+                  fontFamily: MONO_FONT, fontSize: 12, fontWeight: 700,
+                  letterSpacing: 2.5, cursor: 'pointer', padding: 0,
+                }}>+ NEW FOOD</button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

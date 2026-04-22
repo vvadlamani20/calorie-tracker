@@ -1,6 +1,6 @@
 // Bauhaus Calorie Tracker — service worker
 // Bump CACHE on every deploy so clients fetch new assets.
-const CACHE = 'bauhaus-v1';
+const CACHE = 'bauhaus-v2';
 
 const APP_SHELL = [
   './',
@@ -8,6 +8,8 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './bauhaus-tokens.jsx',
   './bauhaus-data.jsx',
+  './bauhaus-search.jsx',
+  './bauhaus-foodedit.jsx',
   './bauhaus-today.jsx',
   './bauhaus-history.jsx',
   './bauhaus-myfoods.jsx',

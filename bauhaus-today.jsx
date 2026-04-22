@@ -61,8 +61,8 @@ function TodayHeader({ totals, tokens }) {
   );
 }
 
-function FoodRow({ entry, onQty, tokens, index, animate }) {
-  const food = getFood(entry.foodId);
+function FoodRow({ entry, library, onQty, tokens, index, animate }) {
+  const food = getFood(library, entry.foodId);
   if (!food) return null;
   const total = food.kcal * entry.qty;
   const [shown, setShown] = React.useState(!animate);
@@ -112,8 +112,8 @@ function formatTodayDate(d = new Date()) {
   return `${wk} · ${mo} ${d.getDate()} · ${d.getFullYear()}`;
 }
 
-function TodayScreen({ entries, setEntries, tokens, dark, setDark, onAdd }) {
-  const totals = sumDay(entries);
+function TodayScreen({ library, entries, setEntries, tokens, dark, setDark, onAdd }) {
+  const totals = sumDay(library, entries);
   const updateQty = (i, qty) => {
     if (qty <= 0) { removeAt(i); return; }
     const next = entries.slice();
@@ -164,7 +164,7 @@ function TodayScreen({ entries, setEntries, tokens, dark, setDark, onAdd }) {
           tokens={tokens}
           height={76}
         >
-          <FoodRow entry={e} onQty={(q) => updateQty(i, q)} tokens={tokens} index={i} animate />
+          <FoodRow entry={e} library={library} onQty={(q) => updateQty(i, q)} tokens={tokens} index={i} animate />
         </SwipeRow>
       ))}
 
