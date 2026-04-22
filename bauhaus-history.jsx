@@ -103,7 +103,7 @@ function HistoryCard({ day, library, tokens, open, onToggle }) {
                   fontFamily: NUM_FONT, fontSize: 20,
                   color: tokens.ink, width: 50, textAlign: 'right',
                   fontFeatureSettings: '"tnum" 1',
-                }}>{f.kcal * e.qty}</div>
+                }}>{Math.round(f.kcal * e.qty)}</div>
               </div>
             );
           })}

@@ -12,7 +12,7 @@ function getFood(library, id) {
 }
 
 function sumDay(library, entries) {
-  return (entries || []).reduce((acc, e) => {
+  const s = (entries || []).reduce((acc, e) => {
     const f = getFood(library, e.foodId);
     if (!f) return acc;
     acc.kcal += (f.kcal || 0) * e.qty;
@@ -21,6 +21,13 @@ function sumDay(library, entries) {
     acc.f    += (f.f    || 0) * e.qty;
     return acc;
   }, { kcal: 0, p: 0, c: 0, f: 0 });
+  // Fractional quantities (e.g. ×0.5) make these floats; round for display.
+  return {
+    kcal: Math.round(s.kcal),
+    p: Math.round(s.p),
+    c: Math.round(s.c),
+    f: Math.round(s.f),
+  };
 }
 
 function newFoodId() {

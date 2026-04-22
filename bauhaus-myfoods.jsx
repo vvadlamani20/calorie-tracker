@@ -181,7 +181,7 @@ function DefaultDayList({ library, defaultDay, setDefaultDay, tokens, showBanner
                 fontFamily: NUM_FONT, fontSize: 22,
                 color: tokens.ink, letterSpacing: 0.5,
                 fontFeatureSettings: '"tnum" 1',
-              }}>{f.kcal * e.qty}</div>
+              }}>{Math.round(f.kcal * e.qty)}</div>
             </div>
           </SwipeRow>
         );

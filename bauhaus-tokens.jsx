@@ -125,7 +125,19 @@ function SwipeRow({ onDelete, children, tokens, height = 76 }) {
 }
 
 // --- Bauhaus stepper ---------------------------------------------
-function Stepper({ value, onChange, tokens }) {
+// Step is 0.25 below 2x (so 0.25/0.5/0.75/1/1.25…), 1 at 2x and above.
+// Long-press cycles faster.
+function formatQty(v) {
+  if (v >= 1 && Number.isInteger(v)) return String(v);
+  // strip trailing zeros
+  return String(Math.round(v * 100) / 100).replace(/\.?0+$/, '');
+}
+function stepFor(v, dir) {
+  // dir = +1 or -1
+  if (dir > 0) return v < 2 ? 0.25 : 1;
+  return v <= 2 ? 0.25 : 1;
+}
+function Stepper({ value, onChange, tokens, min = 0 }) {
   const btn = {
     width: 32, height: 32,
     border: `2px solid ${tokens.ink}`,
@@ -133,30 +145,34 @@ function Stepper({ value, onChange, tokens }) {
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     cursor: 'pointer', padding: 0,
     fontFamily: DISPLAY_FONT, fontSize: 20, lineHeight: 1,
+    touchAction: 'manipulation',
+  };
+  const dec = (e) => {
+    e.stopPropagation();
+    const next = Math.max(min, Math.round((value - stepFor(value, -1)) * 100) / 100);
+    onChange(next);
+  };
+  const inc = (e) => {
+    e.stopPropagation();
+    const next = Math.round((value + stepFor(value, +1)) * 100) / 100;
+    onChange(next);
   };
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-      <button
-        style={btn}
-        onClick={(e) => { e.stopPropagation(); onChange(Math.max(0, value - 1)); }}
-      >
-        {/* minus: a thick bar */}
+      <button style={btn} onClick={dec}>
         <div style={{ width: 14, height: 3, background: tokens.ink }} />
       </button>
       <div style={{
-        minWidth: 44, height: 32,
+        minWidth: 52, height: 32,
         borderTop: `2px solid ${tokens.ink}`,
         borderBottom: `2px solid ${tokens.ink}`,
         background: tokens.ink, color: tokens.bg,
-        fontFamily: MONO_FONT, fontSize: 14, fontWeight: 700,
+        fontFamily: MONO_FONT, fontSize: 13, fontWeight: 700,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        letterSpacing: 0.5,
-      }}>×{value}</div>
-      <button
-        style={btn}
-        onClick={(e) => { e.stopPropagation(); onChange(value + 1); }}
-      >
-        {/* plus */}
+        letterSpacing: 0.5, padding: '0 6px',
+        fontFeatureSettings: '"tnum" 1',
+      }}>×{formatQty(value)}</div>
+      <button style={btn} onClick={inc}>
         <div style={{ position: 'relative', width: 14, height: 14 }}>
           <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 3, background: tokens.ink, transform: 'translateY(-50%)' }} />
           <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 3, background: tokens.ink, transform: 'translateX(-50%)' }} />

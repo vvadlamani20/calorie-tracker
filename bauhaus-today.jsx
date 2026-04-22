@@ -64,7 +64,7 @@ function TodayHeader({ totals, tokens }) {
 function FoodRow({ entry, library, onQty, tokens, index, animate }) {
   const food = getFood(library, entry.foodId);
   if (!food) return null;
-  const total = food.kcal * entry.qty;
+  const total = Math.round(food.kcal * entry.qty);
   const [shown, setShown] = React.useState(!animate);
   React.useEffect(() => {
     if (!animate) return;
