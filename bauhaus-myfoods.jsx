@@ -209,9 +209,14 @@ function SettingsButton({ tokens, onClick }) {
 function MyFoodsScreen({ library, defaultDay, setDefaultDay, tokens, dark, setDark, onNewFood, onEditFood, onOpenSettings }) {
   const [tab, setTab] = React.useState('MY FOODS');
   const [banner, setBanner] = React.useState(false);
+  const [pickOpen, setPickOpen] = React.useState(false);
   const showBanner = () => {
     setBanner(true);
     setTimeout(() => setBanner(false), 2000);
+  };
+  const addToDefault = (food) => {
+    setDefaultDay([...defaultDay, { foodId: food.id, qty: 1 }]);
+    showBanner();
   };
   return (
     <div style={{ background: tokens.bg, minHeight: '100%', paddingBottom: 24, position: 'relative' }}>
@@ -246,26 +251,36 @@ function MyFoodsScreen({ library, defaultDay, setDefaultDay, tokens, dark, setDa
         : <DefaultDayList library={library} defaultDay={defaultDay} setDefaultDay={setDefaultDay} tokens={tokens} showBanner={showBanner} />}
 
       {/* CTA */}
-      {tab === 'MY FOODS' && (
-        <div style={{ padding: 20 }}>
-          <button
-            onClick={onNewFood}
-            style={{
-              width: '100%', height: 56,
-              background: tokens.red, color: '#fff',
-              border: `3px solid ${tokens.ink}`,
-              fontFamily: MONO_FONT, fontSize: 14, fontWeight: 700,
-              letterSpacing: 2.5, cursor: 'pointer', padding: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-            }}>
-            <div style={{ position: 'relative', width: 16, height: 16 }}>
-              <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 3, background: '#fff', transform: 'translateY(-50%)' }} />
-              <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 3, background: '#fff', transform: 'translateX(-50%)' }} />
-            </div>
-            NEW FOOD
-          </button>
-        </div>
-      )}
+      <div style={{ padding: 20 }}>
+        <button
+          onClick={tab === 'MY FOODS' ? onNewFood : () => setPickOpen(true)}
+          disabled={tab === 'DEFAULT DAY' && library.length === 0}
+          style={{
+            width: '100%', height: 56,
+            background: tab === 'DEFAULT DAY' && library.length === 0 ? tokens.muted : tokens.red,
+            color: '#fff',
+            border: `3px solid ${tokens.ink}`,
+            fontFamily: MONO_FONT, fontSize: 14, fontWeight: 700,
+            letterSpacing: 2.5, cursor: 'pointer', padding: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+            opacity: tab === 'DEFAULT DAY' && library.length === 0 ? 0.6 : 1,
+          }}>
+          <div style={{ position: 'relative', width: 16, height: 16 }}>
+            <div style={{ position: 'absolute', left: 0, right: 0, top: '50%', height: 3, background: '#fff', transform: 'translateY(-50%)' }} />
+            <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: 3, background: '#fff', transform: 'translateX(-50%)' }} />
+          </div>
+          {tab === 'MY FOODS' ? 'NEW FOOD' : 'ADD TO DEFAULT'}
+        </button>
+      </div>
+
+      <AddFoodOverlay
+        open={pickOpen}
+        library={library}
+        onClose={() => setPickOpen(false)}
+        onPick={addToDefault}
+        onNewFood={() => { setPickOpen(false); onNewFood(); }}
+        tokens={tokens}
+      />
 
       {/* Banner */}
       <div style={{
