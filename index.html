@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>Bauhaus</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#E63219">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bauhaus">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #F5F0E8;
+    font-family: system-ui;
+    -webkit-font-smoothing: antialiased;
+    overscroll-behavior: none;
+  }
+  * { box-sizing: border-box; }
+  #root {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    background: #F5F0E8;
+  }
+  .bauhaus-scroll::-webkit-scrollbar { display: none; }
+  .bauhaus-scroll { scrollbar-width: none; }
+  /* Disable text selection on UI chrome — feels app-like on iOS */
+  button, .no-select { -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+</style>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="bauhaus-tokens.jsx"></script>
+<script type="text/babel" src="bauhaus-data.jsx"></script>
+<script type="text/babel" src="bauhaus-today.jsx"></script>
+<script type="text/babel" src="bauhaus-history.jsx"></script>
+<script type="text/babel" src="bauhaus-myfoods.jsx"></script>
+<script type="text/babel" src="bauhaus-addfood.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+function DarkToggle({ dark, setDark, tokens }) {
+  return (
+    <button
+      onClick={() => setDark(!dark)}
+      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      style={{
+        width: 44, height: 44,
+        background: dark ? tokens.yellow : tokens.ink,
+        border: `3px solid ${tokens.ink}`,
+        cursor: 'pointer', padding: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <div style={{
+        width: 22, height: 22, borderRadius: '50%',
+        background: dark ? tokens.ink : tokens.yellow,
+        boxShadow: `inset -10px 0 0 ${dark ? tokens.yellow : tokens.ink}`,
+      }} />
+    </button>
+  );
+}
+window.DarkToggle = DarkToggle;
+
+function TabBar({ active, onChange, tokens }) {
+  const tabs = ['TODAY', 'HISTORY', 'MY FOODS'];
+  return (
+    <div style={{
+      flexShrink: 0, zIndex: 40,
+      background: tokens.bg,
+      borderTop: `3px solid ${tokens.ink}`,
+      display: 'flex',
+      paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+    }}>
+      {tabs.map((t, i) => {
+        const isActive = active === t;
+        return (
+          <button
+            key={t}
+            onClick={() => onChange(t)}
+            style={{
+              flex: 1, height: 56, position: 'relative',
+              background: tokens.bg, border: 'none',
+              borderRight: i < tabs.length - 1 ? `2px solid ${tokens.ink}` : 'none',
+              fontFamily: MONO_FONT, fontSize: 11, fontWeight: 700,
+              letterSpacing: 2.5, cursor: 'pointer', padding: 0,
+              color: tokens.ink,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {t}
+            {isActive && (
+              <div style={{
+                position: 'absolute', bottom: 12,
+                left: '50%', transform: 'translateX(-50%)',
+                width: 36, height: 3, background: tokens.red,
+              }} />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function App() {
+  const [tab, setTab] = React.useState(() => localStorage.getItem('bh_tab') || 'TODAY');
+  const [dark, setDark] = React.useState(() => localStorage.getItem('bh_dark') === '1');
+  const [entries, setEntries] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('bh_entries');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_DAY.map(e => ({ ...e }));
+  });
+  const [defaultDay, setDefaultDay] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('bh_default');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_DAY.map(e => ({ ...e }));
+  });
+  const [addOpen, setAddOpen] = React.useState(false);
+
+  React.useEffect(() => { localStorage.setItem('bh_tab', tab); }, [tab]);
+  React.useEffect(() => { localStorage.setItem('bh_dark', dark ? '1' : '0'); }, [dark]);
+  React.useEffect(() => { localStorage.setItem('bh_entries', JSON.stringify(entries)); }, [entries]);
+  React.useEffect(() => { localStorage.setItem('bh_default', JSON.stringify(defaultDay)); }, [defaultDay]);
+
+  // Keep iOS status-bar overlay color in sync with theme (for standalone mode)
+  React.useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', dark ? '#141210' : '#E63219');
+  }, [dark]);
+
+  const tokens = useBauhaus(dark);
+
+  const addFood = (food) => {
+    setEntries([...entries, { foodId: food.id, qty: 1 }]);
+  };
+
+  let screen;
+  if (tab === 'TODAY') {
+    screen = <TodayScreen
+      entries={entries} setEntries={setEntries}
+      tokens={tokens} dark={dark} setDark={setDark}
+      onAdd={() => setAddOpen(true)}
+    />;
+  } else if (tab === 'HISTORY') {
+    screen = <HistoryScreen tokens={tokens} dark={dark} setDark={setDark} />;
+  } else {
+    screen = <MyFoodsScreen
+      defaultDay={defaultDay} setDefaultDay={setDefaultDay}
+      tokens={tokens} dark={dark} setDark={setDark}
+    />;
+  }
+
+  return (
+    <div style={{
+      height: '100dvh', position: 'relative',
+      display: 'flex', flexDirection: 'column',
+      background: tokens.bg,
+    }}>
+      <div
+        className="bauhaus-scroll"
+        style={{
+          flex: 1, overflow: 'auto',
+          background: tokens.bg, position: 'relative',
+          WebkitOverflowScrolling: 'touch',
+        }}
+      >
+        {screen}
+      </div>
+      <AddFoodOverlay
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onPick={addFood}
+        tokens={tokens}
+      />
+      <TabBar active={tab} onChange={setTab} tokens={tokens} />
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
